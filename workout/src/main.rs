@@ -1,5 +1,3 @@
-#![feature(slice_take)]
-
 use crate::api::WorkoutDataStructure;
 use dotenv::dotenv;
 use fit_rust::protocol::data_field::DataField;
