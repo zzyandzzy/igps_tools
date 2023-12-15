@@ -1,0 +1,107 @@
+{
+  "data": {
+    "fromTP": false,
+    "structure": [
+      {
+        "uuid": "49715396-C1A8-4B10-B3A5-8AE090DD1E74",
+        "type": "Step",
+        "intensityClass": "WarmUp",
+        "name": "热身",
+        "length": {
+          "unit": "Second",
+          "value": 600
+        },
+        "openDuration": "false"
+      },
+      {
+        "name": "骑行",
+        "intensityClass": "Active",
+        "length": {
+          "value": 600,
+          "unit": "Second"
+        },
+        "openDuration": "false",
+        "type": "Step",
+        "intensityTarget": {
+          "unit": "PowerCustom",
+          "maxValue": 215,
+          "minValue": 195,
+          "value": 0
+        },
+        "uuid": "AAA31965-528F-4A68-8722-7658BDF3F92D"
+      },
+      {
+        "intensityTarget": {
+          "value": 4,
+          "unit": "Power"
+        },
+        "type": "Step",
+        "uuid": "5AF33F94-735E-4913-A02F-3B5C94665B5E",
+        "intensityClass": "Active",
+        "name": "骑行",
+        "length": {
+          "unit": "Second",
+          "value": 1200
+        },
+        "openDuration": "false"
+      },
+      {
+        "length": {
+          "unit": "Repetition",
+          "value": 10
+        },
+        "uuid": "D48B6665-3B20-4B8F-9B97-45ADAD29B4E1",
+        "type": "Repetition",
+        "steps": [
+          {
+            "intensityClass": "Active",
+            "name": "骑行",
+            "openDuration": "false",
+            "intensityTarget": {
+              "unit": "PowerCustom",
+              "minValue": 180,
+              "value": 0,
+              "maxValue": 197
+            },
+            "length": {
+              "value": 1200,
+              "unit": "Second"
+            },
+            "type": "Step",
+            "uuid": "62E055A9-CC16-499A-89F5-B2A31BFFF00A"
+          },
+          {
+            "intensityClass": "Rest",
+            "intensityTarget": {
+              "value": 0,
+              "maxValue": 215,
+              "unit": "PowerCustom",
+              "minValue": 195
+            },
+            "name": "恢复",
+            "type": "Step",
+            "openDuration": "true",
+            "uuid": "20934329-9FA0-4318-88A6-3617FCD7BD1A"
+          }
+        ]
+      },
+      {
+        "intensityClass": "CoolDown",
+        "name": "冷身",
+        "openDuration": "false",
+        "type": "Step",
+        "length": {
+          "value": 600,
+          "unit": "Second"
+        },
+        "uuid": "EC10E295-BF70-4CC2-A392-54910834DFF2"
+      }
+    ],
+    "title": "训练",
+    "allowDeletion": true,
+    "id": 5012,
+    "workoutType": "bike",
+    "description": "123n",
+    "totalTime": 15000
+  }
+}
