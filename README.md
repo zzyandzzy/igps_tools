@@ -5,11 +5,19 @@
 `igps_tools` Is a series of easy to operate i GPS tools.
 
 - [workout](https://github.com/zzyandzzy/igps_tools/releases) Import the training plan
-  from [icu](https://intervals.icu/) into i GPS
+  from [icu](https://intervals.icu/) into iGPS
 
-  From the tutorial, you use [icu](https://intervals.icu/) to download and unpack the training plan for FIT file,
-  binary file download [workout](https://github.com/zzyandzzy/igps_tools/releases), Create a new fit file and put it
-  into the .fit folder.
-  Download the [env.template](env.template) file and rename it to the.env file, fill in the TOKEN, and execute the
-  workout binary.
-  ![img.png](images/img.png)
+  Use tutorial
+  - Download and extract the training plan as a FIT file from [icu](https://intervals.icu/)
+    ![img.png](images/img.png)
+  - Download [workout](https://github.com/zzyandzzy/igps_tools/releases) binary files
+  - Fill in the TOKEN (or username/password) and execute the workout binary as shown below:
+
+```shell
+# Use iGPS token
+./workout --fit-zip ./fit.zip --token "Your iGPS token"
+# Use iGPS username/password
+./workout --fit-zip ./fit.zip --username "Your iGPS username" --password "Your iGPS password"
+# For more details of the order, please check
+./workout --help
+```

@@ -1,3 +1,7 @@
+pub(crate) mod utils;
+
+use reqwest::header::{HeaderMap, AUTHORIZATION, CONTENT_TYPE};
+use reqwest::Response;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -120,4 +124,24 @@ pub struct WorkoutDataStructureLength {
     #[serde(rename = "minValue")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub min_value: Option<u32>,
+}
+
+const API_EDIT_CUSTOM_WORKOUT_URL: &str =
+    "https://prod.zh.igpsport.com/service/mobile/api/WorkOut/EditCustomWorkOut";
+
+pub async fn push_to_igps(workout_json: String, token: String) -> Response {
+    let client = reqwest::Client::builder().build().unwrap();
+    let mut headers = HeaderMap::new();
+    headers.insert(AUTHORIZATION, token.parse().unwrap());
+    headers.insert(
+        CONTENT_TYPE,
+        "application/json; charset=utf-8".parse().unwrap(),
+    );
+    client
+        .post(API_EDIT_CUSTOM_WORKOUT_URL)
+        .headers(headers)
+        .body(workout_json)
+        .send()
+        .await
+        .unwrap()
 }
