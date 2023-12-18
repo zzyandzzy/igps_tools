@@ -2,7 +2,7 @@
 
 [中文](./README_zh.md)
 
-`igps_tools` Is a series of easy to operate i GPS tools.
+`igps_tools` is a series of easy to operate iGPS tools.
 
 - [workout](https://github.com/zzyandzzy/igps_tools/releases) Import the training plan
   from [icu](https://intervals.icu/) into iGPS
