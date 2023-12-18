@@ -24,7 +24,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ env.TOOLS_VERSION }}
-          release_name: Trippy ${{ env.TOOLS_VERSION }}
+          release_name: iGPS Tools ${{ env.TOOLS_VERSION }}
           body: See [CHANGELOG.md](https://github.com/zzyandzzy/igps_tools/blob/master/CHANGELOG.md) for details.
           prerelease: false
 
@@ -40,15 +40,15 @@ jobs:
     strategy:
       matrix:
         build: [
-          x86_64-linux-musl,
+          x86_64-linux-gnu,
           x86_64-apple-darwin, aarch64-apple-darwin,
           x86_64-pc-windows-msvc, x86_64-pc-windows-gnu
         ]
         include:
           # Linux (x86_64 & aarch64)
-          - build: x86_64-linux-musl
+          - build: x86_64-linux-gnu
             os: ubuntu-22.04
-            target: x86_64-unknown-linux-musl
+            target: x86_64-unknown-linux-gnu
 
           # macOS (x86_64 & aarch64)
           - build: x86_64-apple-darwin
