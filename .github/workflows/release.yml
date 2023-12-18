@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       upload_url: ${{ steps.release.outputs.upload_url }}
-      trip_version: ${{ env.TOOLS_VERSION }}
+      tools_version: ${{ env.TOOLS_VERSION }}
     steps:
       - name: Get the release version from the tag
         shell: bash
@@ -24,7 +24,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ env.TOOLS_VERSION }}
-          release_name: iGPS Tools ${{ env.TOOLS_VERSION }}
+          release_name: ${{ env.TOOLS_VERSION }}
           body: See [CHANGELOG.md](https://github.com/zzyandzzy/igps_tools/blob/master/CHANGELOG.md) for details.
           prerelease: false
 
@@ -40,15 +40,24 @@ jobs:
     strategy:
       matrix:
         build: [
-          x86_64-linux-gnu,
+          x86_64-linux-gnu, x86_64-linux-musl, aarch64-linux-gnu, aarch64-linux-musl,
           x86_64-apple-darwin, aarch64-apple-darwin,
-          x86_64-pc-windows-msvc, x86_64-pc-windows-gnu
+          x86_64-pc-windows-msvc, x86_64-pc-windows-gnu, aarch64-pc-windows-msvc,
         ]
         include:
           # Linux (x86_64 & aarch64)
           - build: x86_64-linux-gnu
-            os: ubuntu-22.04
+            os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
+          - build: x86_64-linux-musl
+            os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+          - build: aarch64-linux-gnu
+            os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+          - build: aarch64-linux-musl
+            os: ubuntu-latest
+            target: aarch64-unknown-linux-musl
 
           # macOS (x86_64 & aarch64)
           - build: x86_64-apple-darwin
@@ -65,12 +74,19 @@ jobs:
           - build: x86_64-pc-windows-gnu
             os: ubuntu-22.04
             target: x86_64-pc-windows-gnu
+          - build: aarch64-pc-windows-msvc
+            os: windows-2022
+            target: aarch64-pc-windows-msvc
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
         with:
           fetch-depth: 1
+
+      - name: Install musl tools
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get install -y musl-tools && sudo apt-get install -y libssl-dev
 
       - name: Install Rust
         uses: actions-rs/toolchain@v1
@@ -100,61 +116,17 @@ jobs:
       - name: Build archive
         shell: bash
         run: |
-          staging="trippy-${{ needs.create-release.outputs.trip_version }}-${{ matrix.target }}"
+          staging="igps_tools-${{ needs.create-release.outputs.tools_version }}-${{ matrix.target }}"
           mkdir -p "$staging"
           if [ "${{ matrix.os }}" = "windows-2022" ] || [ "${{ matrix.build }}" = "x86_64-pc-windows-gnu" ]; then
-            cp "target/${{ matrix.target }}/release/trip.exe" "$staging/"
+            cp "target/${{ matrix.target }}/release/workout.exe" "$staging/"
             7z a -tzip "$staging.zip" "$staging"
             echo "ASSET=$staging.zip" >> $GITHUB_ENV
           else
-            cp "target/${{ matrix.target }}/release/trip" "$staging/"
+            cp "target/${{ matrix.target }}/release/workout" "$staging/"
             tar czf "$staging.tar.gz" "$staging"
             echo "ASSET=$staging.tar.gz" >> $GITHUB_ENV
           fi
-
-      - name: Build RPM package
-        shell: bash
-        if: startsWith(matrix.build, 'x86_64-linux-gnu')
-        run: |
-          cargo install cargo-generate-rpm
-          cargo generate-rpm --target ${{ matrix.target }} -o target/${{ matrix.target }}/generate-rpm/trippy-${{ needs.create-release.outputs.trip_version }}-x86_64.rpm
-
-      - name: Upload RPM package
-        if: startsWith(matrix.build, 'x86_64-linux-gnu')
-        uses: actions/upload-release-asset@v1.0.1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: target/${{ matrix.target }}/generate-rpm/trippy-${{ needs.create-release.outputs.trip_version }}-x86_64.rpm
-          asset_name: trippy-${{ needs.create-release.outputs.trip_version }}-x86_64.rpm
-          asset_content_type: application/x-rpm
-
-      - name: Create Debian package
-        shell: bash
-        if: startsWith(matrix.build, 'x86_64-linux-gnu') || startsWith(matrix.build, 'x86_64-linux-musl')
-        run: |
-          cargo install cargo-deb
-          cargo deb --target ${{ matrix.target }} --deb-version ${{ needs.create-release.outputs.trip_version }}
-          case ${{ matrix.target }} in
-            aarch64-*-linux-*) DPKG_ARCH=arm64 ;;
-            arm-*-linux-*hf) DPKG_ARCH=armhf ;;
-            i686-*-linux-*) DPKG_ARCH=i686 ;;
-            x86_64-*-linux-*) DPKG_ARCH=amd64 ;;
-            *) DPKG_ARCH=notset ;;
-          esac;
-          echo "DPKG_ARCH=${DPKG_ARCH}" >> $GITHUB_ENV
-
-      - name: Upload Deb Release Asset
-        if: startsWith(matrix.build, 'x86_64-linux-gnu') || startsWith(matrix.build, 'x86_64-linux-musl')
-        uses: actions/upload-release-asset@v1.0.1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_content_type: application/vnd.debian.binary-package
-          asset_path: target/${{ matrix.target }}/debian/trippy_${{ needs.create-release.outputs.trip_version }}_${{ env.DPKG_ARCH }}.deb
-          asset_name: trippy_${{ matrix.target }}_${{ needs.create-release.outputs.trip_version }}_${{ env.DPKG_ARCH }}.deb
 
       - name: Upload release archive
         uses: actions/upload-release-asset@v1.0.1
