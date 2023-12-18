@@ -1,10 +1,8 @@
-use dotenv::dotenv;
 use reqwest::header::{HeaderMap, AUTHORIZATION, CONTENT_TYPE};
 use std::fs;
 
 #[tokio::main]
 async fn main() {
-    dotenv().expect("Failed to load .env file");
     let workout_json = fs::read_to_string("examples/workout.json").unwrap();
     let client = init_client();
     let api_url = std::env::var("IGPS_EDIT_CUSTOM_WORKOUT_URL").unwrap();
