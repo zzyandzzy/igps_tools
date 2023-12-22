@@ -17,6 +17,10 @@
 ./workout --fit-zip ./fit.zip --token "Your iGPS token"
 # Use iGPS username/password
 ./workout --fit-zip ./fit.zip --username "Your iGPS username" --password "Your iGPS password"
+# 整体增加10w功率
+./workout --fit-zip ./fit.zip --token "Your iGPS token" add power -v 10
+# 整体增加10秒
+./workout --fit-zip ./fit.zip --token "Your iGPS token" add duration -v 10
 # 更多命令细节请查看
 ./workout --help
 ```

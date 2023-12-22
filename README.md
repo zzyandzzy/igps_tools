@@ -18,6 +18,10 @@
 ./workout --fit-zip ./fit.zip --token "Your iGPS token"
 # Use iGPS username/password
 ./workout --fit-zip ./fit.zip --username "Your iGPS username" --password "Your iGPS password"
+# increment power 10w
+./workout --fit-zip ./fit.zip --token "Your iGPS token" add power -v 10
+# increment duration 10s
+./workout --fit-zip ./fit.zip --token "Your iGPS token" add duration -v 10
 # For more details of the order, please check
 ./workout --help
 ```

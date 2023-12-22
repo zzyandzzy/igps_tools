@@ -1,12 +1,12 @@
-use fit_rust::Fit;
+use crate::api::WorkoutDataStructure;
+use crate::{api, FitWorkoutArgs};
 use fit_rust::protocol::data_field::DataField;
 use fit_rust::protocol::message_type::MessageType;
 use fit_rust::protocol::value::Value;
+use fit_rust::Fit;
 use uuid::Uuid;
-use crate::api;
-use crate::api::WorkoutDataStructure;
 
-pub fn build_workout_json(fit_file: Vec<u8>) -> String {
+pub fn build_workout_json(fit_file: Vec<u8>, fit_workout_args: &Option<FitWorkoutArgs>) -> String {
     let fit: Fit = Fit::read(fit_file).unwrap();
     let mut workout_data = api::WorkoutData {
         ..Default::default()
@@ -37,6 +37,20 @@ pub fn build_workout_json(fit_file: Vec<u8>) -> String {
                             0 => "WarmUp",
                             _ => "Active",
                         };
+                        let mut max_value: u32 = workout_step.target_value_high - 1000;
+                        let mut min_value: u32 = workout_step.target_value_low - 1000;
+                        let mut duration_value: u32 = workout_step.duration_value / 1000;
+                        match fit_workout_args {
+                            None => {}
+                            Some(args) => {
+                                args.apply_operation(
+                                    &mut min_value,
+                                    &mut max_value,
+                                    &mut duration_value,
+                                );
+                            }
+                        }
+
                         workout_data.structure.push(WorkoutDataStructure {
                             workout_type: "Step".to_string(),
                             name: format!("{}-{}", workout_step.step_name, workout_step.index),
@@ -45,12 +59,12 @@ pub fn build_workout_json(fit_file: Vec<u8>) -> String {
                             intensity_target: Some(api::WorkoutDataStructureLength {
                                 unit: "PowerCustom".to_string(),
                                 value: 0,
-                                max_value: Some(workout_step.target_value_high - 1000),
-                                min_value: Some(workout_step.target_value_low - 1000),
+                                max_value: Some(max_value),
+                                min_value: Some(min_value),
                             }),
                             length: api::WorkoutDataStructureLength {
                                 unit: "Second".to_string(),
-                                value: workout_step.duration_value / 1000,
+                                value: duration_value,
                                 max_value: None,
                                 min_value: None,
                             },
