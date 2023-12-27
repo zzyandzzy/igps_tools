@@ -13,11 +13,14 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
-## [0.1.3] - 2023-12-22
+## [0.1.4] - 2023-12-27
 
 ### Added
 
 - Add tool `workout`
+- Add tool `xingzhe`
+
+### Changed
 - `workout` tool add power and time operation
 
 ## [0.1.0] - 2023-12-15
@@ -37,4 +40,4 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 [Unreleased]: https://github.com/zzyandzzy/igps_tools/compare/0.9.0...master
 
 [0.1.0]: https://github.com/zzyandzzy/igps_tools/compare/0.0.0...0.1.0
-[0.1.3]: https://github.com/zzyandzzy/igps_tools/compare/0.1.0...0.1.3
+[0.1.4]: https://github.com/zzyandzzy/igps_tools/compare/0.1.0...0.1.4

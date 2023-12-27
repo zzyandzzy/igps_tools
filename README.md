@@ -25,3 +25,9 @@
 # For more details of the order, please check
 ./workout --help
 ```
+- [xingzhe](https://github.com/zzyandzzy/igps_tools/releases) Convert xingzhe history data to fit.
+
+```shell
+# Download 202305 data convert fit
+./xingzhe -y 2023 -m 5 -u uid -c 'cookie'
+```

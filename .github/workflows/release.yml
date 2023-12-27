@@ -120,10 +120,12 @@ jobs:
           mkdir -p "$staging"
           if [ "${{ matrix.os }}" = "windows-2022" ] || [ "${{ matrix.build }}" = "x86_64-pc-windows-gnu" ]; then
             cp "target/${{ matrix.target }}/release/workout.exe" "$staging/"
+            cp "target/${{ matrix.target }}/release/xingzhe.exe" "$staging/"
             7z a -tzip "$staging.zip" "$staging"
             echo "ASSET=$staging.zip" >> $GITHUB_ENV
           else
             cp "target/${{ matrix.target }}/release/workout" "$staging/"
+            cp "target/${{ matrix.target }}/release/xingzhe" "$staging/"
             tar czf "$staging.tar.gz" "$staging"
             echo "ASSET=$staging.tar.gz" >> $GITHUB_ENV
           fi
