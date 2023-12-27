@@ -2,12 +2,11 @@ use fit_rust::protocol::data_field::DataField;
 use fit_rust::protocol::message_type::MessageType;
 use fit_rust::protocol::value::Value;
 use fit_rust::protocol::{
-    DataMessage, DefinitionMessage, FieldDefBaseType, FieldDefinition, FitDataMessage,
-    FitDefinitionMessage, FitHeader, FitMessage, FitMessageHeader,
+    DataMessage, DefinitionMessage, FieldDefinition, FitDataMessage, FitDefinitionMessage,
+    FitHeader, FitMessage, FitMessageHeader,
 };
 use fit_rust::Fit;
 use serde::{Deserialize, Serialize};
-use std::fs;
 
 #[derive(Serialize, Deserialize)]
 struct XingZhePoint {
@@ -86,19 +85,13 @@ struct FitRecord {
     pub timestamp: u32,
 }
 
-pub fn generate_fit() {
-    let segment: Segment = serde_json::from_str(include_str!(
-        "../examples/2023-01-09 上午 骑行-segment.json"
-    ))
-    .unwrap();
+pub fn generate_fit(segment: String, points: String) {
+    let segment: Segment = serde_json::from_str(&segment).unwrap();
     let session = segment.workout;
-    let xinzhe: XingZhePoint =
-        serde_json::from_str(include_str!("../examples/2023-01-09 上午 骑行-points.json")).unwrap();
+    let xinzhe: XingZhePoint = serde_json::from_str(&points).unwrap();
     let decoded_polyline = polyline::decode_polyline(&xinzhe.encoding_points, 5)
         .unwrap()
         .0;
-    let file_template = fs::read("xingzhe/examples/template.fit").unwrap();
-    let _fit_template: Fit = Fit::read(file_template).unwrap();
 
     let mut write_fit: Fit = Fit {
         header: FitHeader {
@@ -176,8 +169,8 @@ pub fn generate_fit() {
     ]));
 
     // build session
-    // fit_data.push(build_session_def());
-    // fit_data.push(build_session(get_session_vec(&session, min_alt, avg_alt)));
+    fit_data.push(build_session_def());
+    fit_data.push(build_session(get_session_vec(&session, min_alt, avg_alt)));
 
     fit_data.push(build_activity_def());
     fit_data.push(build_activity(vec![
@@ -195,12 +188,8 @@ pub fn generate_fit() {
 
     write_fit.data = fit_data;
     write_fit
-        .write(format!("xingzhe/examples/{}.fit", session.title))
+        .write(format!("xingzhe/data/{}.fit", session.title))
         .unwrap();
-}
-
-fn build_lap(vec: Vec<DataField>) -> FitMessage {
-    build_fit_message(2, MessageType::Lap, vec)
 }
 
 fn get_session_vec(session: &WorkoutSession, min_alt: u16, avg_alt: u16) -> Vec<DataField> {
@@ -212,40 +201,22 @@ fn get_session_vec(session: &WorkoutSession, min_alt: u16, avg_alt: u16) -> Vec<
         DataField::new(253, Value::Time(end_time)),
         // start time
         DataField::new(2, Value::Time(start_time)),
-        // start lat
-        DataField::new(3, Value::F32(f32::MIN)),
-        // start long
-        DataField::new(4, Value::F32(f32::MIN)),
         // total_elapsed_time
-        DataField::new(7, Value::U32(end_time - start_time)),
+        DataField::new(7, Value::U32((end_time - start_time) * 1000)),
         // total_timer_time
-        DataField::new(8, Value::U32(end_time - start_time)),
+        DataField::new(8, Value::U32((end_time - start_time) * 1000)),
         // total_distance
         DataField::new(9, Value::U32(session.distance * 100)),
-        // end lat
-        DataField::new(29, Value::F32(f32::MIN)),
-        // end long
-        DataField::new(30, Value::F32(f32::MIN)),
-        // swc_lat field
-        DataField::new(31, Value::F32(f32::MIN)),
-        // swc_long field
-        DataField::new(32, Value::F32(f32::MIN)),
         // total_moving_time
-        DataField::new(59, Value::U32(end_time - start_time)),
-        // time_in_hr_zone field
-        DataField::new(65, Value::ArrU32(vec![703000, 83000, 0, 0, 0])),
-        // number of time_in_cadence_zone
-        DataField::new(67, Value::ArrU32(vec![505000, 85000, 193000, 3000, 0, 0])),
-        // time_in_power_zone field
-        DataField::new(68, Value::ArrU32(vec![0, 0, 0, 0, 0, 0, 0])),
+        DataField::new(59, Value::U32((end_time - start_time) * 1000)),
         // message_index field
         DataField::new(254, Value::U16(1)),
         // total_calories
-        DataField::new(11, Value::U16((session.calories / 100) as u16)),
+        DataField::new(11, Value::U16((session.calories / 1000) as u16)),
         // avg_speed field
-        DataField::new(14, Value::U16((session.avg_speed * 1000.0) as u16)),
+        DataField::new(14, Value::U16((session.avg_speed / 3.6 * 1000.0) as u16)),
         // max_speed
-        DataField::new(15, Value::U16((session.max_speed * 1000.0) as u16)),
+        DataField::new(15, Value::U16((session.max_speed / 3.6 * 1000.0) as u16)),
         // avg power
         DataField::new(20, Value::U16(session.power_avg)),
         // max power
@@ -264,16 +235,16 @@ fn get_session_vec(session: &WorkoutSession, min_alt: u16, avg_alt: u16) -> Vec<
         DataField::new(35, Value::U16(session.power_tss as u16)),
         // intensity_factor field
         DataField::new(36, Value::U16((session.power_if * 1000.0) as u16)),
-        // left_right_balance field
-        DataField::new(37, Value::I16(i16::MAX)),
+        // // left_right_balance field
+        // DataField::new(37, Value::I16(i16::MAX)),
         // avg_altitude
         DataField::new(49, Value::U16(avg_alt)),
         // max_altitude
         DataField::new(50, Value::U16(max_alt)),
         // max_pos_grade
-        DataField::new(55, Value::I16(session.max_grade)),
+        DataField::new(55, Value::I16(session.max_grade * 100)),
         // max_neg_grade
-        DataField::new(56, Value::I16(session.min_grade)),
+        DataField::new(56, Value::I16(session.min_grade * 100)),
         // min_altitude
         DataField::new(71, Value::U16(min_alt)),
         DataField::new(0, Value::Enum("session")),
@@ -297,17 +268,47 @@ fn get_session_vec(session: &WorkoutSession, min_alt: u16, avg_alt: u16) -> Vec<
     ]
 }
 
-fn build_igps_file_id_def() -> FitMessage {
+fn build_session_def() -> FitMessage {
     build_fit_def(
-        6,
+        3,
         vec![
-            FieldDefinition::new(3, 32, true, 12),
-            FieldDefinition::new(4, 4, true, 6),
-            FieldDefinition::new(1, 2, true, 4),
-            FieldDefinition::new(2, 2, true, 4),
-            FieldDefinition::new(0, 1, false, 0),
+            FieldDefinition::new(253, 4, true, 6),
+            FieldDefinition::new(2, 4, true, 6),
+            FieldDefinition::new(7, 4, true, 6),
+            FieldDefinition::new(8, 4, true, 6),
+            FieldDefinition::new(9, 4, true, 6),
+            FieldDefinition::new(59, 4, true, 6),
+            FieldDefinition::new(254, 2, true, 4),
+            FieldDefinition::new(11, 2, true, 4),
+            FieldDefinition::new(14, 2, true, 4),
+            FieldDefinition::new(15, 2, true, 4),
+            FieldDefinition::new(20, 2, true, 4),
+            FieldDefinition::new(21, 2, true, 4),
+            FieldDefinition::new(22, 2, true, 4),
+            FieldDefinition::new(23, 2, true, 4),
+            FieldDefinition::new(25, 2, true, 4),
+            FieldDefinition::new(26, 2, true, 4),
+            FieldDefinition::new(34, 2, true, 4),
+            FieldDefinition::new(35, 2, true, 4),
+            FieldDefinition::new(36, 2, true, 4),
+            FieldDefinition::new(49, 2, true, 4),
+            FieldDefinition::new(50, 2, true, 4),
+            FieldDefinition::new(55, 2, true, 3),
+            FieldDefinition::new(56, 2, true, 3),
+            FieldDefinition::new(71, 2, true, 4),
+            FieldDefinition::new(0, 1, true, 0),
+            FieldDefinition::new(1, 1, true, 0),
+            FieldDefinition::new(5, 1, true, 0),
+            FieldDefinition::new(6, 1, true, 0),
+            FieldDefinition::new(16, 1, true, 2),
+            FieldDefinition::new(17, 1, true, 2),
+            FieldDefinition::new(18, 1, true, 2),
+            FieldDefinition::new(19, 1, true, 2),
+            FieldDefinition::new(57, 1, true, 1),
+            FieldDefinition::new(58, 1, true, 1),
+            FieldDefinition::new(64, 1, true, 2),
         ],
-        MessageType::FileId,
+        MessageType::Session,
     )
 }
 
@@ -328,6 +329,20 @@ fn build_igps_file_id(start_time: u32) -> FitMessage {
             DataField::new(2, Value::U16(200)),
             DataField::new(0, Value::Enum("activity")),
         ],
+    )
+}
+
+fn build_igps_file_id_def() -> FitMessage {
+    build_fit_def(
+        6,
+        vec![
+            FieldDefinition::new(3, 32, true, 12),
+            FieldDefinition::new(4, 4, true, 6),
+            FieldDefinition::new(1, 2, true, 4),
+            FieldDefinition::new(2, 2, true, 4),
+            FieldDefinition::new(0, 1, false, 0),
+        ],
+        MessageType::FileId,
     )
 }
 
@@ -443,69 +458,6 @@ fn build_event_def() -> FitMessage {
             FieldDefinition::new(1, 1, false, 0),
         ],
         MessageType::Event,
-    )
-}
-
-fn build_session_def() -> FitMessage {
-    build_fit_def(
-        3,
-        vec![
-            FieldDefinition::new(253, 4, true, 6),
-            FieldDefinition::new(2, 4, true, 6),
-            FieldDefinition::new(3, 4, true, 5),
-            FieldDefinition::new(4, 4, true, 5),
-            FieldDefinition::new(7, 4, true, 6),
-            FieldDefinition::new(29, 4, true, 5),
-            FieldDefinition::new(30, 4, true, 5),
-            FieldDefinition::new(31, 4, true, 5),
-            FieldDefinition::new(32, 4, true, 5),
-            FieldDefinition::new(59, 4, true, 6),
-            FieldDefinition::new(65, 20, true, 6),
-            FieldDefinition::new(67, 24, true, 6),
-            FieldDefinition::new(68, 28, true, 6),
-            FieldDefinition::new(254, 2, true, 4),
-            FieldDefinition::new(11, 2, true, 4),
-            FieldDefinition::new(14, 2, true, 4),
-            FieldDefinition::new(15, 2, true, 4),
-            FieldDefinition::new(20, 2, true, 4),
-            FieldDefinition::new(21, 2, true, 4),
-            FieldDefinition::new(22, 2, true, 4),
-            FieldDefinition::new(23, 2, true, 4),
-            FieldDefinition::new(25, 2, true, 4),
-            FieldDefinition::new(26, 2, true, 4),
-            FieldDefinition::new(34, 2, true, 4),
-            FieldDefinition::new(35, 2, true, 4),
-            FieldDefinition::new(36, 2, true, 4),
-            FieldDefinition::new(37, 2, true, 4),
-            FieldDefinition::new(49, 2, true, 4),
-            FieldDefinition::new(50, 2, true, 4),
-            FieldDefinition::new(52, 2, true, 3),
-            FieldDefinition::new(53, 2, true, 3),
-            FieldDefinition::new(54, 2, true, 3),
-            FieldDefinition::new(55, 2, true, 3),
-            FieldDefinition::new(56, 2, true, 3),
-            FieldDefinition::new(60, 2, true, 3),
-            FieldDefinition::new(61, 2, true, 3),
-            FieldDefinition::new(62, 2, true, 3),
-            FieldDefinition::new(63, 2, true, 3),
-            FieldDefinition::new(71, 2, true, 4),
-            FieldDefinition::new(0, 1, false, 0),
-            FieldDefinition::new(1, 1, false, 0),
-            FieldDefinition::new(5, 1, false, 0),
-            FieldDefinition::new(6, 1, false, 0),
-            FieldDefinition::new(16, 1, false, 2),
-            FieldDefinition::new(17, 1, false, 2),
-            FieldDefinition::new(18, 1, false, 2),
-            FieldDefinition::new(19, 1, false, 2),
-            FieldDefinition::new(57, 1, false, 1),
-            FieldDefinition::new(58, 1, false, 1),
-            FieldDefinition::new(64, 1, false, 2),
-            FieldDefinition::new(101, 1, false, 2),
-            FieldDefinition::new(102, 1, false, 2),
-            FieldDefinition::new(103, 1, false, 2),
-            FieldDefinition::new(104, 1, false, 2),
-        ],
-        MessageType::Session,
     )
 }
 

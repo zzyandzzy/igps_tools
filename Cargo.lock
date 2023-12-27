@@ -1795,6 +1795,7 @@ dependencies = [
 name = "xingzhe"
 version = "0.1.0"
 dependencies = [
+ "clap",
  "fit-rust",
  "openssl",
  "polyline",

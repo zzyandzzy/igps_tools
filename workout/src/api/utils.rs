@@ -3,6 +3,7 @@ use crate::{api, FitWorkoutArgs};
 use fit_rust::protocol::data_field::DataField;
 use fit_rust::protocol::message_type::MessageType;
 use fit_rust::protocol::value::Value;
+use fit_rust::protocol::FitMessage;
 use fit_rust::Fit;
 use uuid::Uuid;
 
@@ -12,93 +13,105 @@ pub fn build_workout_json(fit_file: Vec<u8>, fit_workout_args: &Option<FitWorkou
         ..Default::default()
     };
     for data in &fit.data {
-        match data.message.message_type {
-            MessageType::FileId | MessageType::Workout => {
-                for item in &data.message.values {
-                    match item.field_num {
-                        8 => {
-                            if data.message.message_type == MessageType::FileId {
-                                workout_data.description =
-                                    <Value as Clone>::clone(&item.value).into();
-                            } else {
-                                workout_data.title = <Value as Clone>::clone(&item.value).into();
+        match data {
+            FitMessage::Definition(_) => {}
+            FitMessage::Data(msg) => {
+                match msg.data.message_type {
+                    MessageType::FileId | MessageType::Workout => {
+                        for item in &msg.data.values {
+                            match item.field_num {
+                                8 => {
+                                    if msg.data.message_type == MessageType::FileId {
+                                        workout_data.description =
+                                            <Value as Clone>::clone(&item.value).into();
+                                    } else {
+                                        workout_data.title =
+                                            <Value as Clone>::clone(&item.value).into();
+                                    }
+                                }
+                                _ => {}
                             }
                         }
-                        _ => {}
                     }
-                }
-            }
-            MessageType::WorkoutStep => {
-                let workout_step = get_workout_step(&data.message.values);
-                match workout_step.duration_type.as_str() {
-                    "time" => {
-                        workout_data.total_time += workout_step.duration_value / 1000;
-                        let intensity_class = match workout_data.structure.len() {
-                            0 => "WarmUp",
-                            _ => "Active",
-                        };
-                        let mut max_value: u32 = workout_step.target_value_high - 1000;
-                        let mut min_value: u32 = workout_step.target_value_low - 1000;
-                        let mut duration_value: u32 = workout_step.duration_value / 1000;
-                        match fit_workout_args {
-                            None => {}
-                            Some(args) => {
-                                args.apply_operation(
-                                    &mut min_value,
-                                    &mut max_value,
-                                    &mut duration_value,
-                                );
-                            }
-                        }
+                    MessageType::WorkoutStep => {
+                        let workout_step = get_workout_step(&msg.data.values);
+                        match workout_step.duration_type.as_str() {
+                            "time" => {
+                                workout_data.total_time += workout_step.duration_value / 1000;
+                                let intensity_class = match workout_data.structure.len() {
+                                    0 => "WarmUp",
+                                    _ => "Active",
+                                };
+                                let mut max_value: u32 = workout_step.target_value_high - 1000;
+                                let mut min_value: u32 = workout_step.target_value_low - 1000;
+                                let mut duration_value: u32 = workout_step.duration_value / 1000;
+                                match fit_workout_args {
+                                    None => {}
+                                    Some(args) => {
+                                        args.apply_operation(
+                                            &mut min_value,
+                                            &mut max_value,
+                                            &mut duration_value,
+                                        );
+                                    }
+                                }
 
-                        workout_data.structure.push(WorkoutDataStructure {
-                            workout_type: "Step".to_string(),
-                            name: format!("{}-{}", workout_step.step_name, workout_step.index),
-                            uuid: Uuid::new_v4().to_string(),
-                            intensity_class: intensity_class.into(),
-                            intensity_target: Some(api::WorkoutDataStructureLength {
-                                unit: "PowerCustom".to_string(),
-                                value: 0,
-                                max_value: Some(max_value),
-                                min_value: Some(min_value),
-                            }),
-                            length: api::WorkoutDataStructureLength {
-                                unit: "Second".to_string(),
-                                value: duration_value,
-                                max_value: None,
-                                min_value: None,
-                            },
-                            open_duration: "false".to_string(),
-                            steps: None,
-                        });
-                    }
-                    "repeat_until_steps_cmplt" => {
-                        // index - duration_value
-                        let count =
-                            workout_step.index as usize - workout_step.duration_value as usize;
-                        let repeat_data_vec = workout_data
-                            .structure
-                            .split_off(workout_data.structure.len() - count);
-                        workout_data.structure.push(WorkoutDataStructure {
-                            workout_type: "Repetition".to_string(),
-                            name: format!("{}-{}", workout_step.step_name, workout_step.index),
-                            uuid: Uuid::new_v4().to_string(),
-                            intensity_class: "Active".into(),
-                            intensity_target: None,
-                            length: api::WorkoutDataStructureLength {
-                                unit: "Repetition".to_string(),
-                                value: workout_step.target_value,
-                                max_value: None,
-                                min_value: None,
-                            },
-                            open_duration: "false".to_string(),
-                            steps: Some(repeat_data_vec),
-                        });
+                                workout_data.structure.push(WorkoutDataStructure {
+                                    workout_type: "Step".to_string(),
+                                    name: format!(
+                                        "{}-{}",
+                                        workout_step.step_name, workout_step.index
+                                    ),
+                                    uuid: Uuid::new_v4().to_string(),
+                                    intensity_class: intensity_class.into(),
+                                    intensity_target: Some(api::WorkoutDataStructureLength {
+                                        unit: "PowerCustom".to_string(),
+                                        value: 0,
+                                        max_value: Some(max_value),
+                                        min_value: Some(min_value),
+                                    }),
+                                    length: api::WorkoutDataStructureLength {
+                                        unit: "Second".to_string(),
+                                        value: duration_value,
+                                        max_value: None,
+                                        min_value: None,
+                                    },
+                                    open_duration: "false".to_string(),
+                                    steps: None,
+                                });
+                            }
+                            "repeat_until_steps_cmplt" => {
+                                // index - duration_value
+                                let count = workout_step.index as usize
+                                    - workout_step.duration_value as usize;
+                                let repeat_data_vec = workout_data
+                                    .structure
+                                    .split_off(workout_data.structure.len() - count);
+                                workout_data.structure.push(WorkoutDataStructure {
+                                    workout_type: "Repetition".to_string(),
+                                    name: format!(
+                                        "{}-{}",
+                                        workout_step.step_name, workout_step.index
+                                    ),
+                                    uuid: Uuid::new_v4().to_string(),
+                                    intensity_class: "Active".into(),
+                                    intensity_target: None,
+                                    length: api::WorkoutDataStructureLength {
+                                        unit: "Repetition".to_string(),
+                                        value: workout_step.target_value,
+                                        max_value: None,
+                                        min_value: None,
+                                    },
+                                    open_duration: "false".to_string(),
+                                    steps: Some(repeat_data_vec),
+                                });
+                            }
+                            _ => {}
+                        };
                     }
                     _ => {}
-                };
+                }
             }
-            _ => {}
         }
     }
 
